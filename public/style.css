@@ -1,0 +1,103 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f1f5f9;
+}
+
+/* ---------- INPUT STYLE (NEUMORPHISM) ---------- */
+.input {
+  border: none;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #e8e8e8;
+  box-shadow:
+    20px 20px 60px #c5c5c5,
+   -20px -20px 60px #ffffff;
+  transition: 0.3s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  background: #e8e8e8;
+  box-shadow:
+    inset 20px 20px 60px #c5c5c5,
+    inset -20px -20px 60px #ffffff;
+}
+
+/* ---------- LOGIN ---------- */
+.login-card {
+  width: 360px;
+  margin: 120px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.login-card h2 {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* ---------- BUTTON ---------- */
+button {
+  margin-top: 15px;
+  padding: 12px;
+  width: 100%;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+button:hover {
+  background: #1e40af;
+}
+
+/* ---------- BANK APP ---------- */
+.bank-app {
+  max-width: 420px;
+  margin: auto;
+  padding: 20px;
+}
+
+.bank-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.balance-card {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: white;
+  border-radius: 18px;
+  padding: 25px;
+  margin-bottom: 20px;
+}
+
+.balance-card p {
+  margin: 0;
+  opacity: 0.8;
+}
+
+.balance-card h2 {
+  font-size: 34px;
+  margin-top: 10px;
+}
+
+/* ---------- SECTIONS ---------- */
+.actions, .history {
+  background: white;
+  padding: 15px;
+  border-radius: 16px;
+  margin-bottom: 15px;
+}
+
+.history div {
+  font-size: 14px;
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Banque Virtuelle</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container" id="loginBox">
+  <h1>Bienvenue sur la Banque Virtuelle</h1>
+  <p>Entrez votre numéro de carte pour continuer :</p>
+  <input id="card" placeholder="Ex: VX-123456">
+  <button onclick="goPassword()">Continuer</button>
+</div>
+
+<script>
+function goPassword(){
+  const cardInput = document.getElementById("card").value.trim();
+  if(!cardInput){
+    alert("Veuillez entrer un numéro de carte !");
+    return;
+  }
+  window.location.href = "password.html?card=" + encodeURIComponent(cardInput);
+}
+</script>
+
+</body>
+</html>

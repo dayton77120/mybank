@@ -1,0 +1,16 @@
+{
+  "VX-216267": {
+    "card": "VX-216267",
+    "balance": 1000000000000,
+    "password": "dayton",
+    "tempPassword": null,
+    "history": []
+  },
+  "VX-220573": {
+    "card": "VX-220573",
+    "balance": 0,
+    "password": "dayton",
+    "tempPassword": null,
+    "history": []
+  }
+}
