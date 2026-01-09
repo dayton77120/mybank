@@ -2,26 +2,98 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Banque Virtuelle</title>
+<title>Ma Banque</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container" id="loginBox">
-  <h1>Bienvenue sur la Banque Virtuelle</h1>
-  <p>Entrez votre numéro de carte pour continuer :</p>
-  <input id="card" placeholder="Ex: VX-123456">
-  <button onclick="goPassword()">Continuer</button>
+<div class="container" id="login">
+  <h2>Connexion</h2>
+  <input class="input" id="card" placeholder="Numéro de carte">
+
+  <div class="btn-wrapper">
+    <button class="btn-gradient" onclick="login()">
+      <div class="btn-inner">
+        <span class="btn-text">Continuer</span>
+      </div>
+    </button>
+  </div>
+</div>
+
+<div class="container" id="password" style="display:none">
+  <h2>Mot de passe</h2>
+  <input class="input" id="passwordInput" type="password" placeholder="Mot de passe">
+
+  <div class="btn-wrapper">
+    <button class="btn-gradient" onclick="checkPassword()">
+      <div class="btn-inner">
+        <span class="btn-text">Se connecter</span>
+      </div>
+    </button>
+  </div>
+</div>
+
+<div class="container" id="account" style="display:none">
+  <h2>Mon compte</h2>
+  <p id="balance"></p>
+
+  <input class="input" id="amount" placeholder="Montant">
+  <input class="input" id="to" placeholder="Carte destinataire">
+
+  <div class="btn-wrapper">
+    <button class="btn-gradient" onclick="send()">
+      <div class="btn-inner">
+        <span class="btn-text">Envoyer</span>
+      </div>
+    </button>
+  </div>
+
+  <h3>Historique</h3>
+  <div id="history"></div>
 </div>
 
 <script>
-function goPassword(){
-  const cardInput = document.getElementById("card").value.trim();
-  if(!cardInput){
-    alert("Veuillez entrer un numéro de carte !");
-    return;
-  }
-  window.location.href = "password.html?card=" + encodeURIComponent(cardInput);
+let currentCard = null;
+
+function login(){
+  currentCard = card.value;
+  loginDiv.style.display = "none";
+  password.style.display = "block";
+}
+
+function checkPassword(){
+  fetch("/login", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      card: currentCard,
+      password: passwordInput.value
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    password.style.display="none";
+    account.style.display="block";
+    update(data);
+  })
+  .catch(() => alert("Mot de passe incorrect"));
+}
+
+function update(data){
+  balance.innerText = "Solde : " + data.balance + "€";
+  history.innerHTML = data.history.join("<br>");
+}
+
+function send(){
+  fetch("/transfer", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      from: currentCard,
+      to: to.value,
+      amount: Number(amount.value)
+    })
+  }).then(()=>location.reload());
 }
 </script>
 
