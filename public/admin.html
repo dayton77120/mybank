@@ -2,97 +2,44 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Admin Banque</title>
+<title>Admin</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-  <h2>Admin</h2>
+  <h2>Admin Panel</h2>
 
-  <input type="password" id="adminPwd" placeholder="Mot de passe admin">
-  <button onclick="adminLogin()">Connexion</button>
-
-  <div id="panel" style="display:none">
-
-    <h3>Créer une carte</h3>
-    <input id="newBalance" placeholder="Solde initial">
-    <button onclick="createCard()">Créer</button>
-    <p id="createdCard"></p>
-
-    <hr>
-
-    <h3>Recharger une carte</h3>
-    <input id="rechargeCard" placeholder="Numéro de carte">
-    <input id="rechargeAmount" placeholder="Montant">
-    <button onclick="recharge()">Recharger</button>
-
-    <hr>
-
-    <h3>Afficher toutes les cartes</h3>
-    <button onclick="loadCards()">Afficher</button>
-    <div id="cardsList"></div>
-
+  <div class="btn-wrapper">
+    <button class="btn-gradient" onclick="createCard()">
+      <div class="btn-inner">
+        <span class="btn-text">Créer une carte</span>
+      </div>
+    </button>
   </div>
+
+  <div class="btn-wrapper">
+    <button class="btn-gradient" onclick="listCards()">
+      <div class="btn-inner">
+        <span class="btn-text">Afficher les cartes</span>
+      </div>
+    </button>
+  </div>
+
+  <pre id="output"></pre>
 </div>
 
 <script>
-const ADMIN_PASSWORD = "admin123";
-
-function adminLogin(){
-  if(adminPwd.value === ADMIN_PASSWORD){
-    panel.style.display = "block";
-  } else {
-    alert("Mot de passe admin incorrect");
-  }
-}
-
 function createCard(){
-  fetch("/create",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ balance: Number(newBalance.value) })
-  })
-  .then(r=>r.json())
-  .then(d=>{
-    createdCard.innerHTML = `
-      Carte : <b>${d.card}</b><br>
-      MDP temporaire : <b>${d.tempPassword}</b>
-    `;
-  });
+  fetch("/admin/create",{method:"POST"})
+  .then(r=>r.text())
+  .then(alert);
 }
 
-function recharge(){
-  fetch("/recharge",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({
-      card: rechargeCard.value,
-      amount: Number(rechargeAmount.value)
-    })
-  })
-  .then(r=>{
-    if(!r.ok) return r.text().then(t=>{throw t});
-    alert("Carte rechargée");
-  })
-  .catch(alert);
-}
-
-function loadCards(){
+function listCards(){
   fetch("/admin/cards")
   .then(r=>r.json())
-  .then(cards=>{
-    cardsList.innerHTML = "";
-    cards.forEach(c=>{
-      cardsList.innerHTML += `
-        <div style="border-bottom:1px solid #334155;padding:5px">
-          <b>${c.card}</b><br>
-          Solde : ${c.balance}€<br>
-          Temp MDP : ${c.tempPassword ? "OUI" : "NON"}
-        </div>
-      `;
-    });
-  });
+  .then(d=>output.innerText=JSON.stringify(d,null,2));
 }
 </script>
 
