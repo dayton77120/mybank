@@ -1,103 +1,67 @@
 body {
-  margin: 0;
-  font-family: "Segoe UI", sans-serif;
-  background: #f1f5f9;
+  font-family: Arial, sans-serif;
+  background: #111827;
+  color: white;
 }
 
-/* ---------- INPUT STYLE (NEUMORPHISM) ---------- */
+.container {
+  width: 300px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #1f2933;
+  border-radius: 12px;
+}
+
 .input {
+  width: 100%;
   border: none;
   padding: 1rem;
   border-radius: 1rem;
   background: #e8e8e8;
-  box-shadow:
-    20px 20px 60px #c5c5c5,
-   -20px -20px 60px #ffffff;
-  transition: 0.3s;
-  width: 100%;
-  box-sizing: border-box;
+  box-shadow: 20px 20px 60px #c5c5c5,
+              -20px -20px 60px #ffffff;
+  margin-bottom: 10px;
 }
 
 .input:focus {
   outline: none;
-  background: #e8e8e8;
-  box-shadow:
-    inset 20px 20px 60px #c5c5c5,
-    inset -20px -20px 60px #ffffff;
+  box-shadow: inset 20px 20px 60px #c5c5c5,
+              inset -20px -20px 60px #ffffff;
 }
 
-/* ---------- LOGIN ---------- */
-.login-card {
-  width: 360px;
-  margin: 120px auto;
-  background: white;
-  padding: 25px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-}
+/* ===== BOUTONS ===== */
 
-.login-card h2 {
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-/* ---------- BUTTON ---------- */
-button {
-  margin-top: 15px;
-  padding: 12px;
-  width: 100%;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-button:hover {
-  background: #1e40af;
-}
-
-/* ---------- BANK APP ---------- */
-.bank-app {
-  max-width: 420px;
-  margin: auto;
-  padding: 20px;
-}
-
-.bank-header {
+.btn-wrapper {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
+  justify-content: center;
+  margin: 10px 0;
 }
 
-.balance-card {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  color: white;
-  border-radius: 18px;
-  padding: 25px;
-  margin-bottom: 20px;
-}
-
-.balance-card p {
-  margin: 0;
-  opacity: 0.8;
-}
-
-.balance-card h2 {
-  font-size: 34px;
-  margin-top: 10px;
-}
-
-/* ---------- SECTIONS ---------- */
-.actions, .history {
-  background: white;
-  padding: 15px;
+.btn-gradient {
+  padding: 4px;
   border-radius: 16px;
-  margin-bottom: 15px;
+  background: linear-gradient(to bottom, rgba(31,31,31,0.4), transparent);
+  border: none;
+  cursor: pointer;
 }
 
-.history div {
-  font-size: 14px;
+.btn-gradient:active {
+  transform: scale(0.995);
+}
+
+.btn-inner {
+  padding: 4px;
+  border-radius: 12px;
+  background: linear-gradient(to bottom, #4b5563, #374151);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+.btn-text {
+  display: block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: linear-gradient(to bottom, #4b5563, #374151);
+  color: white;
+  font-weight: 600;
+  text-align: center;
 }
