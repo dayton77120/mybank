@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Payer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>Paiement</h2>
+
+  <p id="info"></p>
+
+  <input id="from" placeholder="Votre carte">
+  <input id="password" type="password" placeholder="Mot de passe">
+
+  <button onclick="pay()">Payer</button>
+</div>
+
+<script>
+const id = location.pathname.split("/").pop();
+
+fetch("/link/"+id)
+.then(r=>r.json())
+.then(d=>{
+  info.innerText = "Montant à payer : " + d.amount + " €";
+});
+
+function pay(){
+  fetch("/pay-link", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      id,
+      from: from.value,
+      password: password.value
+    })
+  })
+  .then(r=>{
+    if(!r.ok) throw 0;
+    alert("Paiement réussi");
+    location.href="/";
+  })
+  .catch(()=>alert("Erreur paiement"));
+}
+</script>
+
+</body>
+</html>
