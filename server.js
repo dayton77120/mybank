@@ -6,11 +6,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 
-const DATA_FILE = "argent.json";
+const DATA_FILE = path.join(__dirname, "argent.json");
 
-/* ---------- Utils ---------- */
+/* ---------- UTILS ---------- */
 
 function loadData() {
   if (!fs.existsSync(DATA_FILE)) {
@@ -27,7 +27,12 @@ function generateTempPassword() {
   return Math.random().toString(36).slice(-8);
 }
 
-/* ---------- API ---------- */
+/* ---------- ROUTES API ---------- */
+
+// TEST (pour vérifier que le serveur répond)
+app.get("/api/ping", (req, res) => {
+  res.json({ status: "ok" });
+});
 
 // LOGIN
 app.post("/api/login", (req, res) => {
@@ -36,7 +41,7 @@ app.post("/api/login", (req, res) => {
 
   let account = data.accounts.find(a => a.card === card);
 
-  // Création compte si inexistant
+  // Création compte
   if (!account) {
     const tempPassword = generateTempPassword();
     account = {
@@ -54,11 +59,12 @@ app.post("/api/login", (req, res) => {
     });
   }
 
-  // Vérification mot de passe
+  // Mauvais mot de passe
   if (account.password !== password) {
     return res.status(401).json({ error: "WRONG_PASSWORD" });
   }
 
+  // Connexion OK
   res.json({
     card: account.card,
     balance: account.balance,
@@ -96,6 +102,8 @@ app.post("/api/send", (req, res) => {
 app.get("/create", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "create.html"));
 });
+
+/* ---------- START ---------- */
 
 app.listen(PORT, () => {
   console.log("Serveur lancé sur le port " + PORT);
