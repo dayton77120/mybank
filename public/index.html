@@ -3,59 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <title>Banque Virtuelle</title>
-<link rel="stylesheet" href="style.css">
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6f8;
+}
+.container {
+  max-width: 400px;
+  margin: 50px auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+}
+input, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+}
+button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+</style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="login">
+  <h2>Connexion</h2>
+  <input id="card" placeholder="Numéro de carte">
+  <input id="password" placeholder="Mot de passe">
+  <button onclick="login()">Se connecter</button>
+</div>
 
-  <h1>Banque Virtuelle</h1>
+<div class="container" id="account" style="display:none">
+  <h2>Banque Virtuelle</h2>
+  <p id="balance"></p>
 
-  <div class="card">
-    <p>Solde disponible</p>
-    <h2 id="balance">0 €</h2>
-  </div>
+  <h3>Envoyer de l'argent</h3>
+  <input id="to" placeholder="Carte destinataire">
+  <input id="amount" placeholder="Montant">
+  <button onclick="send()">Envoyer</button>
 
-  <!-- BOUTON AJOUTÉ -->
-  <button onclick="location.href='/create.html'">
-    Créer un lien de paiement
-  </button>
+  <h3>Historique</h3>
+  <div id="history"></div>
 
-  <div class="card">
-    <h3>Envoyer de l'argent</h3>
-    <input id="to" placeholder="Carte destinataire">
-    <input id="amount" placeholder="Montant">
-    <button onclick="send()">Envoyer</button>
-  </div>
-
-  <div class="card">
-    <h3>Historique</h3>
-    <ul id="history"></ul>
-  </div>
-
+  <br>
+  <button onclick="location.href='/create'">Créer un lien de paiement</button>
 </div>
 
 <script>
-fetch("/me")
-.then(r=>r.json())
-.then(d=>{
-  balance.innerText = d.balance + " €";
-  d.history.forEach(h=>{
-    const li = document.createElement("li");
-    li.innerText = h;
-    history.appendChild(li);
-  });
-});
+let currentCard = "";
 
-function send(){
-  fetch("/send",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
+function login() {
+  fetch("/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      card: card.value,
+      password: password.value
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.new) {
+      alert("Compte créé ! Mot de passe temporaire : " + data.tempPassword);
+      return;
+    }
+
+    currentCard = data.card;
+    login.style.display = "none";
+    account.style.display = "block";
+    balance.innerText = "Solde : " + data.balance + " ₳";
+    history.innerHTML = data.history.join("<br>");
+  })
+  .catch(() => alert("Erreur de connexion"));
+}
+
+function send() {
+  fetch("/api/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: currentCard,
       to: to.value,
       amount: Number(amount.value)
     })
-  }).then(()=>location.reload());
+  })
+  .then(r => r.json())
+  .then(() => location.reload())
+  .catch(() => alert("Erreur transfert"));
 }
 </script>
 
