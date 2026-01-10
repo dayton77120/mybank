@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Créer un lien</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>Créer un lien de paiement</h2>
+
+  <input id="amount" placeholder="Montant à payer">
+  <input id="to" placeholder="Carte bénéficiaire">
+
+  <button onclick="create()">Créer le lien</button>
+
+  <p id="result"></p>
+</div>
+
+<script>
+function create(){
+  fetch("/create-link", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      amount: Number(amount.value),
+      to: to.value
+    })
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    result.innerHTML = `
+      Lien créé :<br>
+      <a href="${d.link}" target="_blank">${d.link}</a>
+    `;
+  });
+}
+</script>
+
+</body>
+</html>
