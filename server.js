@@ -1,81 +1,177 @@
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
+
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static("public"));
 
-const DATA = "argent.json";
-const LINKS = "links.json";
+const DATA_FILE = "argent.json";
+const LINKS_FILE = "links.json";
 
-function read(){
-  return JSON.parse(fs.readFileSync(DATA,"utf8"));
-}
-function write(d){
-  fs.writeFileSync(DATA, JSON.stringify(d,null,2));
-}
-function readLinks(){
-  return JSON.parse(fs.readFileSync(LINKS,"utf8"));
-}
-function writeLinks(d){
-  fs.writeFileSync(LINKS, JSON.stringify(d,null,2));
+/* =========================
+   INIT DES FICHIERS (RENDER)
+   ========================= */
+
+if (!fs.existsSync(DATA_FILE)) {
+  fs.writeFileSync(
+    DATA_FILE,
+    JSON.stringify(
+      {
+        accounts: [
+          {
+            card: "VX-216267",
+            password: "1234",
+            balance: 1000000000000,
+            history: []
+          }
+        ]
+      },
+      null,
+      2
+    )
+  );
 }
 
-/* USER ACTUEL (exemple) */
-app.get("/me",(req,res)=>{
-  const d = read();
-  res.json(d.accounts[0]);
+if (!fs.existsSync(LINKS_FILE)) {
+  fs.writeFileSync(LINKS_FILE, JSON.stringify({}, null, 2));
+}
+
+/* =========================
+   HELPERS
+   ========================= */
+
+function readData() {
+  return JSON.parse(fs.readFileSync(DATA_FILE));
+}
+
+function saveData(data) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+function readLinks() {
+  return JSON.parse(fs.readFileSync(LINKS_FILE));
+}
+
+function saveLinks(data) {
+  fs.writeFileSync(LINKS_FILE, JSON.stringify(data, null, 2));
+}
+
+/* =========================
+   API COMPTES
+   ========================= */
+
+// Connexion
+app.post("/api/login", (req, res) => {
+  const { card, password } = req.body;
+  const data = readData();
+
+  const account = data.accounts.find(
+    a => a.card === card && a.password === password
+  );
+
+  if (!account) {
+    return res.status(401).json({ error: "Carte ou mot de passe invalide" });
+  }
+
+  res.json({
+    card: account.card,
+    balance: account.balance,
+    history: account.history
+  });
 });
 
-/* ENVOI CLASSIQUE */
-app.post("/send",(req,res)=>{
-  const d = read();
-  const from = d.accounts[0];
-  const to = d.accounts.find(a=>a.card === req.body.to);
+// Envoyer de l'argent
+app.post("/api/send", (req, res) => {
+  const { from, to, amount } = req.body;
+  const data = readData();
 
-  if(!to || from.balance < req.body.amount) return res.status(400).end();
+  const sender = data.accounts.find(a => a.card === from);
+  const receiver = data.accounts.find(a => a.card === to);
 
-  from.balance -= req.body.amount;
-  to.balance += req.body.amount;
+  if (!sender || !receiver) {
+    return res.status(404).json({ error: "Carte introuvable" });
+  }
 
-  from.history.push("-" + req.body.amount + "€");
-  to.history.push("+" + req.body.amount + "€");
+  if (sender.balance < amount) {
+    return res.status(400).json({ error: "Solde insuffisant" });
+  }
 
-  write(d);
-  res.end();
+  sender.balance -= amount;
+  receiver.balance += amount;
+
+  sender.history.push(`- ${amount} ₳ vers ${to}`);
+  receiver.history.push(`+ ${amount} ₳ de ${from}`);
+
+  saveData(data);
+  res.json({ success: true });
 });
 
-/* CRÉER LIEN */
-app.post("/create-link",(req,res)=>{
+/* =========================
+   LIENS DE PAIEMENT
+   ========================= */
+
+// Créer un lien
+app.post("/api/create-link", (req, res) => {
+  const { card, amount } = req.body;
   const links = readLinks();
-  const id = Math.random().toString(36).substring(2,8);
+
+  const id = Math.random().toString(36).substring(2, 10);
 
   links[id] = {
-    amount: req.body.amount,
-    to: req.body.to,
-    used: false
+    card,
+    amount,
+    paid: false
   };
 
-  writeLinks(links);
-  res.json({ link: "/pay/" + id });
+  saveLinks(links);
+  res.json({ link: `/pay/${id}` });
 });
 
-/* INFOS LIEN */
-app.get("/link/:id",(req,res)=>{
-  const l = readLinks()[req.params.id];
-  if(!l || l.used) return res.status(404).end();
-  res.json(l);
-});
-
-/* PAYER VIA LIEN */
-app.post("/pay-link",(req,res)=>{
+// Payer via lien
+app.post("/api/pay/:id", (req, res) => {
   const links = readLinks();
-  const l = links[req.body.id];
-  if(!l || l.used) return res.status(400).end();
+  const data = readData();
 
-  const d = read();
-  const from = d.accounts.find(a=>a.card === req.body.from);
-  const to = d.accounts.find(a=>a.card === l.to);
+  const link = links[req.params.id];
+  if (!link || link.paid) {
+    return res.status(404).json({ error: "Lien invalide" });
+  }
 
-  if(!from || !to) return res.status(400).end();
-  if(from.password !== req.body.password) return res.s
+  const account = data.accounts.find(a => a.card === link.card);
+  if (!account) {
+    return res.status(404).json({ error: "Compte introuvable" });
+  }
+
+  account.balance += link.amount;
+  account.history.push(`+ ${link.amount} ₳ (paiement lien)`);
+
+  link.paid = true;
+
+  saveData(data);
+  saveLinks(links);
+
+  res.json({ success: true });
+});
+
+/* =========================
+   ROUTES PAGES
+   ========================= */
+
+app.get("/create", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "create.html"));
+});
+
+app.get("/pay/:id", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "pay.html"));
+});
+
+/* =========================
+   START
+   ========================= */
+
+app.listen(PORT, () => {
+  console.log("✅ Serveur lancé sur le port", PORT);
+});
