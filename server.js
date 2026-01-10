@@ -1,119 +1,81 @@
 const express = require("express");
 const fs = require("fs");
-
 const app = express();
+
 app.use(express.json());
 app.use(express.static("public"));
 
-const DATA_FILE = "./argent.json";
+const DATA = "argent.json";
+const LINKS = "links.json";
 
-function loadData() {
-  if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, "{}");
-  return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+function read(){
+  return JSON.parse(fs.readFileSync(DATA,"utf8"));
+}
+function write(d){
+  fs.writeFileSync(DATA, JSON.stringify(d,null,2));
+}
+function readLinks(){
+  return JSON.parse(fs.readFileSync(LINKS,"utf8"));
+}
+function writeLinks(d){
+  fs.writeFileSync(LINKS, JSON.stringify(d,null,2));
 }
 
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-// Générer mot de passe temporaire
-function generateTempPassword() {
-  return Math.random().toString(36).slice(-8);
-}
-
-// LOGIN
-app.post("/login", (req, res) => {
-  const { card, password } = req.body;
-  const data = loadData();
-  const acc = data[card];
-
-  if (!acc) return res.status(404).send("CARD_NOT_FOUND");
-
-  if (acc.tempPassword) {
-    if (password !== acc.tempPassword)
-      return res.status(403).send("WRONG_PASSWORD");
-    return res.json({ first: true });
-  }
-
-  if (acc.password !== password)
-    return res.status(403).send("WRONG_PASSWORD");
-
-  res.json(acc);
+/* USER ACTUEL (exemple) */
+app.get("/me",(req,res)=>{
+  const d = read();
+  res.json(d.accounts[0]);
 });
 
-// SET NEW PASSWORD
-app.post("/set-password", (req, res) => {
-  const { card, password } = req.body;
-  const data = loadData();
-  if (!data[card]) return res.status(404).send("CARD_NOT_FOUND");
+/* ENVOI CLASSIQUE */
+app.post("/send",(req,res)=>{
+  const d = read();
+  const from = d.accounts[0];
+  const to = d.accounts.find(a=>a.card === req.body.to);
 
-  data[card].password = password;
-  data[card].tempPassword = null;
+  if(!to || from.balance < req.body.amount) return res.status(400).end();
 
-  saveData(data);
-  res.send("OK");
+  from.balance -= req.body.amount;
+  to.balance += req.body.amount;
+
+  from.history.push("-" + req.body.amount + "€");
+  to.history.push("+" + req.body.amount + "€");
+
+  write(d);
+  res.end();
 });
 
-// TRANSFER
-app.post("/transfer", (req, res) => {
-  const { from, to, amount } = req.body;
-  const data = loadData();
+/* CRÉER LIEN */
+app.post("/create-link",(req,res)=>{
+  const links = readLinks();
+  const id = Math.random().toString(36).substring(2,8);
 
-  if (!data[from] || !data[to]) return res.status(404).send("CARD_NOT_FOUND");
-  if (amount <= 0) return res.status(400).send("INVALID_AMOUNT");
-  if (data[from].balance < amount) return res.status(400).send("NO_MONEY");
-
-  data[from].balance -= amount;
-  data[to].balance += amount;
-
-  data[from].history.push(`-${amount}€ → ${to}`);
-  data[to].history.push(`+${amount}€ ← ${from}`);
-
-  saveData(data);
-  res.send("OK");
-});
-
-// RECHARGE
-app.post("/recharge", (req, res) => {
-  const { card, amount } = req.body;
-  const data = loadData();
-  if (!data[card]) return res.status(404).send("CARD_NOT_FOUND");
-
-  data[card].balance += Number(amount);
-  data[card].history.push(`+${amount}€ recharge admin`);
-
-  saveData(data);
-  res.send("OK");
-});
-
-// CREATE CARD WITH TEMP PASSWORD
-app.post("/create", (req, res) => {
-  const { balance } = req.body;
-  const data = loadData();
-
-  const card = "VX-" + Math.floor(100000 + Math.random() * 900000);
-  const tempPassword = generateTempPassword();
-
-  data[card] = {
-    card,
-    balance: Number(balance || 0),
-    password: null,
-    tempPassword,
-    history: []
+  links[id] = {
+    amount: req.body.amount,
+    to: req.body.to,
+    used: false
   };
 
-  saveData(data);
-  res.json({ card, tempPassword });
+  writeLinks(links);
+  res.json({ link: "/pay/" + id });
 });
 
-// LIST CARDS (ADMIN)
-app.get("/admin/cards", (req, res) => {
-  const data = loadData();
-  res.json(Object.values(data));
+/* INFOS LIEN */
+app.get("/link/:id",(req,res)=>{
+  const l = readLinks()[req.params.id];
+  if(!l || l.used) return res.status(404).end();
+  res.json(l);
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Serveur lancé sur le port " + PORT);
-});
+/* PAYER VIA LIEN */
+app.post("/pay-link",(req,res)=>{
+  const links = readLinks();
+  const l = links[req.body.id];
+  if(!l || l.used) return res.status(400).end();
 
+  const d = read();
+  const from = d.accounts.find(a=>a.card === req.body.from);
+  const to = d.accounts.find(a=>a.card === l.to);
+
+  if(!from || !to) return res.status(400).end();
+  if(from.password !== req.body.password) return res.s
