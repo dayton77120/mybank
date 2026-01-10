@@ -6,12 +6,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static("public"));
 
-const DATA_FILE = path.join(__dirname, "argent.json");
+const DATA_FILE = "./argent.json";
 
-/* ---------- UTILS ---------- */
-
+/* ---------- Utils ---------- */
 function loadData() {
   if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, JSON.stringify({ accounts: [] }, null, 2));
@@ -23,88 +22,54 @@ function saveData(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-function generateTempPassword() {
-  return Math.random().toString(36).slice(-8);
-}
-
-/* ---------- ROUTES API ---------- */
-
-// TEST (pour vérifier que le serveur répond)
+/* ---------- Routes ---------- */
 app.get("/api/ping", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// LOGIN
 app.post("/api/login", (req, res) => {
   const { card, password } = req.body;
-  const data = loadData();
 
+  if (!card || !password) {
+    return res.status(400).json({ error: "Missing data" });
+  }
+
+  const data = loadData();
   let account = data.accounts.find(a => a.card === card);
 
-  // Création compte
+  // 🟢 SI LE COMPTE N’EXISTE PAS → ON LE CRÉE
   if (!account) {
-    const tempPassword = generateTempPassword();
     account = {
       card,
-      password: tempPassword,
+      password,
       balance: 1000,
-      history: [`Compte créé – mot de passe temporaire : ${tempPassword}`]
+      history: []
     };
+
     data.accounts.push(account);
     saveData(data);
 
     return res.json({
       new: true,
-      tempPassword
+      balance: account.balance,
+      tempPassword: password
     });
   }
 
-  // Mauvais mot de passe
+  // 🔴 MAUVAIS MOT DE PASSE
   if (account.password !== password) {
-    return res.status(401).json({ error: "WRONG_PASSWORD" });
+    return res.status(401).json({ error: "Wrong password" });
   }
 
-  // Connexion OK
+  // ✅ CONNEXION OK
   res.json({
-    card: account.card,
+    new: false,
     balance: account.balance,
     history: account.history
   });
 });
 
-// TRANSFERT
-app.post("/api/send", (req, res) => {
-  const { from, to, amount } = req.body;
-  const data = loadData();
-
-  const sender = data.accounts.find(a => a.card === from);
-  const receiver = data.accounts.find(a => a.card === to);
-
-  if (!sender || !receiver) {
-    return res.status(400).json({ error: "CARD_NOT_FOUND" });
-  }
-
-  if (sender.balance < amount) {
-    return res.status(400).json({ error: "INSUFFICIENT_FUNDS" });
-  }
-
-  sender.balance -= amount;
-  receiver.balance += amount;
-
-  sender.history.push(`Envoyé ${amount} ₳ → ${to}`);
-  receiver.history.push(`Reçu ${amount} ₳ ← ${from}`);
-
-  saveData(data);
-  res.json({ success: true });
-});
-
-// PAGE CREATE
-app.get("/create", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "create.html"));
-});
-
-/* ---------- START ---------- */
-
+/* ---------- Start ---------- */
 app.listen(PORT, () => {
-  console.log("Serveur lancé sur le port " + PORT);
+  console.log("Server running on port " + PORT);
 });
