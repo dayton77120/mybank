@@ -2,97 +2,30 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Virtual Bank</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #111827;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .box {
-      background: #1f2933;
-      padding: 30px;
-      border-radius: 12px;
-      width: 320px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 6px;
-      border: none;
-      font-size: 14px;
-    }
-
-    input {
-      background: #374151;
-      color: white;
-    }
-
-    button {
-      background: #f59e0b;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background: #d97706;
-    }
-  </style>
+  <title>Banque Virtuelle</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="box">
-  <h2>Connexion</h2>
+<div class="card">
+  <h1>Banque Virtuelle</h1>
 
-  <input id="card" placeholder="Numéro de carte">
-  <input id="password" type="password" placeholder="Mot de passe">
+  <input
+    class="input"
+    id="card"
+    placeholder="Numéro de carte"
+  >
 
-  <button onclick="login()">Se connecter</button>
+  <button onclick="goPassword()">Continuer</button>
 </div>
 
 <script>
-async function login() {
-  const card = document.getElementById("card").value;
-  const password = document.getElementById("password").value;
+function goPassword() {
+  const card = document.getElementById("card").value.trim();
+  if (!card) return alert("Entre un numéro de carte");
 
-  try {
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ card, password })
-    });
-
-    if (!res.ok) {
-      alert("Erreur de connexion");
-      return;
-    }
-
-    const data = await res.json();
-
-    if (data.new) {
-      alert("Compte créé ! Mot de passe temporaire : " + data.tempPassword);
-    } else {
-      alert("Connexion réussie ! Solde : " + data.balance + " ₳");
-    }
-
-  } catch (err) {
-    alert("Impossible de contacter le serveur");
-    console.error(err);
-  }
+  localStorage.setItem("card", card);
+  window.location.href = "password.html";
 }
 </script>
 
