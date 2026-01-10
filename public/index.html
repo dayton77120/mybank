@@ -1,173 +1,98 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Banque Virtuelle</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Virtual Bank</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111827;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-}
+    .box {
+      background: #1f2933;
+      padding: 30px;
+      border-radius: 12px;
+      width: 320px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
 
-/* CONTENEUR */
-.container {
-  max-width: 420px;
-  margin: 40px auto;
-  background: white;
-  padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-}
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-/* INPUTS */
-.input {
-  width: 100%;
-  border: none;
-  padding: 1rem;
-  border-radius: 1rem;
-  background: #e8e8e8;
-  box-shadow: 20px 20px 60px #c5c5c5,
-             -20px -20px 60px #ffffff;
-  transition: 0.3s;
-  margin-top: 10px;
-}
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+    }
 
-.input:focus {
-  outline: none;
-  box-shadow: inset 20px 20px 60px #c5c5c5,
-              inset -20px -20px 60px #ffffff;
-}
+    input {
+      background: #374151;
+      color: white;
+    }
 
-/* BOUTONS */
-button {
-  width: 100%;
-  margin-top: 15px;
-  padding: 14px;
-  border: none;
-  border-radius: 12px;
-  background: #2563eb;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-}
+    button {
+      background: #f59e0b;
+      cursor: pointer;
+      font-weight: bold;
+    }
 
-button:hover {
-  background: #1e4ed8;
-}
-
-/* CARTE SOLDE */
-.card {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  color: white;
-  padding: 20px;
-  border-radius: 16px;
-  margin-bottom: 20px;
-}
-
-/* HISTORIQUE */
-.history {
-  background: #f1f5f9;
-  padding: 10px;
-  border-radius: 10px;
-  max-height: 150px;
-  overflow-y: auto;
-  font-size: 14px;
-}
-</style>
+    button:hover {
+      background: #d97706;
+    }
+  </style>
 </head>
-
 <body>
 
-<!-- CONNEXION -->
-<div class="container" id="loginDiv">
+<div class="box">
   <h2>Connexion</h2>
-  <input id="card" class="input" placeholder="Numéro de carte">
-  <input id="password" class="input" type="password" placeholder="Mot de passe">
+
+  <input id="card" placeholder="Numéro de carte">
+  <input id="password" type="password" placeholder="Mot de passe">
+
   <button onclick="login()">Se connecter</button>
 </div>
 
-<!-- COMPTE -->
-<div class="container" id="account" style="display:none">
-
-  <div class="card">
-    <h3>Solde disponible</h3>
-    <h1 id="balance">0 ₳</h1>
-    <small id="cardNumber"></small>
-  </div>
-
-  <h3>Envoyer de l'argent</h3>
-  <input id="to" class="input" placeholder="Carte destinataire">
-  <input id="amount" class="input" placeholder="Montant">
-  <button onclick="send()">Envoyer</button>
-
-  <h3>Historique</h3>
-  <div class="history" id="history"></div>
-
-  <button onclick="location.href='/create'">Créer un lien de paiement</button>
-</div>
-
 <script>
-let currentCard = "";
+async function login() {
+  const card = document.getElementById("card").value;
+  const password = document.getElementById("password").value;
 
-function login() {
-  fetch("/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      card: card.value,
-      password: password.value
-    })
-  })
-  .then(async r => {
-    const data = await r.json();
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ card, password })
+    });
 
-    if (!r.ok) {
-      if (data.error === "WRONG_PASSWORD") {
-        alert("Mot de passe incorrect");
-        return;
-      }
-      alert("Erreur serveur");
+    if (!res.ok) {
+      alert("Erreur de connexion");
       return;
     }
+
+    const data = await res.json();
 
     if (data.new) {
-      alert(
-        "Compte créé ✅\n\nMot de passe temporaire : " +
-        data.tempPassword +
-        "\n\nReconnecte-toi avec ce mot de passe."
-      );
-      return;
+      alert("Compte créé ! Mot de passe temporaire : " + data.tempPassword);
+    } else {
+      alert("Connexion réussie ! Solde : " + data.balance + " ₳");
     }
 
-    currentCard = data.card;
-    loginDiv.style.display = "none";
-    account.style.display = "block";
-
-    balance.innerText = data.balance + " ₳";
-    cardNumber.innerText = "Carte : " + data.card;
-    history.innerHTML = data.history.join("<br>");
-  })
-  .catch(() => {
+  } catch (err) {
     alert("Impossible de contacter le serveur");
-  });
-}
-
-function send() {
-  fetch("/api/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: currentCard,
-      to: to.value,
-      amount: Number(amount.value)
-    })
-  })
-  .then(r => r.json())
-  .then(() => location.reload())
-  .catch(() => alert("Erreur transfert"));
+    console.error(err);
+  }
 }
 </script>
 
